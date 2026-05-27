@@ -1504,9 +1504,9 @@ function filterProds() {
     var q = S.q.toLowerCase();
     r = r.filter(p => p.name.toLowerCase().includes(q) || p.cat.toLowerCase().includes(q));
   }
-  if(S.sort === 'asc')  r = [...r].sort((a,b) => (a.skus[0].p||9e9) - (b.skus[0].p||9e9));
-  if(S.sort === 'desc') r = [...r].sort((a,b) => (b.skus[0].p||0) - (a.skus[0].p||0));
-  if(S.sort === 'name') r = [...r].sort((a,b) => a.name.localeCompare(b.name));
+  if(S.sort === 'asc')  r = r.slice().sort(function(a,b){return (a.skus[0].p||9e9)-(b.skus[0].p||9e9);});
+  if(S.sort === 'desc') r = r.slice().sort(function(a,b){return (b.skus[0].p||0)-(a.skus[0].p||0);});
+  if(S.sort === 'name') r = r.slice().sort(function(a,b){return a.name.localeCompare(b.name);});
   return r;
 }
 
@@ -1566,7 +1566,7 @@ function subnav(el) {
   S.cat = el.dataset.cat; S.q = ''; S.sort = 'default';
   syncCatCards();
   renderGrid(filterProds());
-  window.scrollTo({top: 200, behavior: 'smooth'});
+  window.scrollTo(0,200);
 }
 function catCard(el) {
   document.querySelectorAll('.ml-cat-card').forEach(e => e.classList.remove('active'));
@@ -1574,13 +1574,13 @@ function catCard(el) {
   S.cat = el.dataset.cat; S.q = ''; S.sort = 'default';
   syncSubnav();
   renderGrid(filterProds());
-  setTimeout(() => (function(){var el=document.querySelector('.ml-products-header');if(el)el.scrollIntoView({behavior:'smooth',block:'start'});})(), 50);
+  setTimeout(() => (function(){var el=document.querySelector('.ml-products-header');if(el)el.scrollIntoView(true);})(), 50);
 }
 function filterByCat(cat) {
   S.cat = cat; S.q = ''; S.sort = 'default';
   syncSubnav(); syncCatCards();
   renderGrid(filterProds());
-  setTimeout(() => (function(){var el=document.querySelector('.ml-products-header');if(el)el.scrollIntoView({behavior:'smooth',block:'start'});})(), 50);
+  setTimeout(() => (function(){var el=document.querySelector('.ml-products-header');if(el)el.scrollIntoView(true);})(), 50);
 }
 function syncSubnav() {
   document.querySelectorAll('.ml-subnav-item').forEach(e => {
@@ -1832,7 +1832,7 @@ function handleSearch(val) {
     var res = fuse.search(q, {limit:8});
     matches = res.map(r => ({
       product: r.item,
-      hl: r.matches?.[0] ? hlMatch(r.item.name, r.matches[0].indices) : escHtml(r.item.name)
+      hl: (r.matches && r.matches[0]) ? hlMatch(r.item.name, r.matches[0].indices) : escHtml(r.item.name)
     }));
   } else {
     matches = PRODUCTS.filter(p => p.name.toLowerCase().includes(q.toLowerCase())).slice(0,8).map(p => ({product:p, hl:escHtml(p.name)}));
@@ -1860,7 +1860,7 @@ function jumpTo(id) {
   renderGrid(PRODUCTS);
   setTimeout(() => {
     var el = $('pc-'+id);
-    if(el) { el.scrollIntoView({behavior:'smooth',block:'center'}); el.style.boxShadow='0 0 0 3px var(--blue)'; setTimeout(()=>el.style.boxShadow='',1800); }
+    if(el) { el.scrollIntoView(true); el.style.boxShadow='0 0 0 3px var(--blue)'; setTimeout(()=>el.style.boxShadow='',1800); }
   }, 80);
 }
 document.addEventListener('click', e => {
@@ -2164,7 +2164,7 @@ function exportOrderPDF() {
   var total=items.reduce((a,b)=>a+(b.price*b.qty),0);
   var d=getDiscount(total);var disc=d?Math.round(total*d.pct/100):0;
   var BLUE=[52,131,250],DARK=[51,51,51],GRAY=[120,120,120],W=210;
-  doc.setFillColor(...BLUE);doc.rect(0,0,W,28,'F');
+  doc.setFillColor(BLUE[0],BLUE[1],BLUE[2]);doc.rect(0,0,W,28,'F');
   doc.setTextColor(255,255,255);doc.setFontSize(16);doc.setFont('helvetica','bold');
   doc.text('AVE DORADA COMERCIALIZADORA',W/2,12,{align:'center'});
   doc.setFontSize(9);doc.setFont('helvetica','normal');doc.setTextColor(200,220,255);
@@ -2172,14 +2172,14 @@ function exportOrderPDF() {
   doc.text(new Date().toLocaleString('es-AR'),W/2,25,{align:'center'});
   var y=38;
   var name=(($('co-nombre')||{value:''}).value||'').trim()||'—';var dir=(($('co-dir')||{value:''}).value||'').trim()||'—';
-  doc.setTextColor(...DARK);doc.setFontSize(10);doc.setFont('helvetica','bold');
+  doc.setTextColor(DARK[0],DARK[1],DARK[2]);doc.setFontSize(10);doc.setFont('helvetica','bold');
   doc.text('Cliente: '+name,14,y);y+=6;doc.text('Entrega: '+dir,14,y);y+=10;
-  doc.setFillColor(...BLUE);doc.rect(14,y-4,W-28,8,'F');
+  doc.setFillColor(BLUE[0],BLUE[1],BLUE[2]);doc.rect(14,y-4,W-28,8,'F');
   doc.setTextColor(255,255,255);doc.setFontSize(8);doc.setFont('helvetica','bold');
   doc.text('PRODUCTO',16,y+1);doc.text('CANT',145,y+1,{align:'right'});doc.text('SUBTOTAL',W-14,y+1,{align:'right'});
   y+=10;
   items.forEach(it=>{
-    doc.setTextColor(...DARK);doc.setFontSize(8);doc.setFont('helvetica','normal');
+    doc.setTextColor(DARK[0],DARK[1],DARK[2]);doc.setFontSize(8);doc.setFont('helvetica','normal');
     doc.text((it.p.name.length>40?it.p.name.slice(0,40)+'…':it.p.name),14,y);
     doc.text('×'+it.qty,145,y,{align:'right'});
     doc.text(it.price?fmtN(it.price*it.qty):'Consultar',W-14,y,{align:'right'});
@@ -2187,9 +2187,9 @@ function exportOrderPDF() {
   });
   y+=4;
   if(d){doc.setTextColor(0,166,80);doc.setFontSize(9);doc.setFont('helvetica','bold');doc.text(d.label+': -'+fmtN(disc),W-14,y,{align:'right'});y+=7;}
-  doc.setTextColor(...BLUE);doc.setFontSize(14);doc.setFont('helvetica','bold');
+  doc.setTextColor(BLUE[0],BLUE[1],BLUE[2]);doc.setFontSize(14);doc.setFont('helvetica','bold');
   doc.text('TOTAL: '+fmtN(total-disc),W-14,y,{align:'right'});
-  doc.setFillColor(...DARK);doc.rect(0,287,W,10,'F');
+  doc.setFillColor(DARK[0],DARK[1],DARK[2]);doc.rect(0,287,W,10,'F');
   doc.setTextColor(150,150,150);doc.setFontSize(7);doc.setFont('helvetica','normal');
   doc.text('Ave Dorada Comercializadora · Precios sujetos a variación · IVA incluido',W/2,293,{align:'center'});
   doc.save('AveDorada_Pedido_'+new Date().toISOString().slice(0,10)+'.pdf');
@@ -2200,7 +2200,7 @@ function exportPDF() {
   var {jsPDF}=window.jspdf;
   var doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
   var BLUE=[52,131,250],DARK=[51,51,51],GRAY=[100,100,100],W=210;
-  doc.setFillColor(...BLUE);doc.rect(0,0,W,30,'F');
+  doc.setFillColor(BLUE[0],BLUE[1],BLUE[2]);doc.rect(0,0,W,30,'F');
   doc.setTextColor(255,255,255);doc.setFontSize(20);doc.setFont('helvetica','bold');
   doc.text('AVE DORADA COMERCIALIZADORA',W/2,13,{align:'center'});
   doc.setFontSize(9);doc.setFont('helvetica','normal');doc.setTextColor(200,220,255);
@@ -2212,21 +2212,21 @@ function exportPDF() {
   cats.forEach(cat=>{
     var prods=src.filter(p=>p.cat===cat);if(!prods.length)return;
     if(y>270){doc.addPage();y=14;}
-    doc.setFillColor(...BLUE);doc.rect(14,y-4,W-28,8,'F');
+    doc.setFillColor(BLUE[0],BLUE[1],BLUE[2]);doc.rect(14,y-4,W-28,8,'F');
     doc.setTextColor(255,255,255);doc.setFontSize(9);doc.setFont('helvetica','bold');
     doc.text(cn[cat].replace(/./u,'').trim(),17,y+1);y+=10;
     prods.forEach(p=>{
       if(y>275){doc.addPage();y=14;}
-      doc.setTextColor(...DARK);doc.setFontSize(8);doc.setFont('helvetica','normal');
+      doc.setTextColor(DARK[0],DARK[1],DARK[2]);doc.setFontSize(8);doc.setFont('helvetica','normal');
       doc.text((p.name.length>42?p.name.slice(0,42)+'…':p.name),16,y);
       var sk=p.skus.map(s=>s.l+(s.p?' '+fmtN(s.p):'')).join(' | ');
-      doc.setTextColor(...GRAY);doc.setFontSize(7);
+      doc.setTextColor(GRAY[0],GRAY[1],GRAY[2]);doc.setFontSize(7);
       doc.text((sk.length>70?sk.slice(0,70)+'…':sk),16,y+4);
       doc.setDrawColor(220,220,220);doc.setLineWidth(0.2);doc.line(14,y+6,W-14,y+6);y+=9;
     });y+=3;
   });
   var pc=doc.getNumberOfPages();
-  for(var i=1;i<=pc;i++){doc.setPage(i);doc.setFillColor(...DARK);doc.rect(0,287,W,10,'F');doc.setTextColor(100,100,100);doc.setFontSize(7);doc.text('Ave Dorada · Precios sujetos a variación',W/2,293,{align:'center'});doc.text('Pág '+i+'/'+pc,W-14,293,{align:'right'});}
+  for(var i=1;i<=pc;i++){doc.setPage(i);doc.setFillColor(DARK[0],DARK[1],DARK[2]);doc.rect(0,287,W,10,'F');doc.setTextColor(100,100,100);doc.setFontSize(7);doc.text('Ave Dorada · Precios sujetos a variación',W/2,293,{align:'center'});doc.text('Pág '+i+'/'+pc,W-14,293,{align:'right'});}
   doc.save('AveDorada_Precios_'+new Date().toISOString().slice(0,10)+'.pdf');
   showToast('📄 PDF descargado');
 }
@@ -2293,7 +2293,7 @@ function renderAdminList(q) {
 function openEditor(id) {
   editingId=id; tempImg='';
   var p=PRODUCTS_EDIT.find(x=>x.id===id);if(!p)return;
-  tempSkus=p.skus.map(s=>{return{...s}});
+  tempSkus=p.skus.map(function(s){return Object.assign({},s);});
   $('editor-title').textContent='Editar: '+p.name;
   renderEditorBody(p);
   $('editor-overlay').style.opacity='1';$('editor-overlay').style.pointerEvents='all';
@@ -2305,7 +2305,7 @@ function closeEditor() {
   editingId=null;tempSkus=[];tempImg='';
 }
 function renderEditorBody(p) {
-  var allCats=[...new Set(['aves','cerdo','huevos','quesos','fiambreria','congelados','almacen',...PRODUCTS_EDIT.map(x=>x.cat)])];
+  var _catArr=['aves','cerdo','huevos','quesos','fiambreria','congelados','almacen'].concat(PRODUCTS_EDIT.map(function(x){return x.cat;}));var allCats=_catArr.filter(function(v,i,a){return a.indexOf(v)===i;});
   var catOpts=allCats.map(c=>`<option value="${c}"${p.cat===c?' selected':''}>${c}</option>`).join('');
   var tagOpts=['','promo','nuevo'].map(t=>`<option value="${t}"${(p.tag||'')=== t?' selected':''}>${t||'ninguna'}</option>`).join('');
   var cur=p.tipo||'ambos';
@@ -2394,15 +2394,15 @@ function saveProduct() {
   else if(tempImg)PRODUCTS_EDIT[idx].img=tempImg;
   tempImg='';
   PRODUCTS_EDIT[idx].skus=tempSkus.map(s=>{return{l:s.l.trim(),p:parseFloat(s.p)||0}});
-  var pi=PRODUCTS.findIndex(x=>x.id===editingId);if(pi>=0)PRODUCTS[pi]={...PRODUCTS_EDIT[idx]};
+  var pi=PRODUCTS.findIndex(x=>x.id===editingId);if(pi>=0)PRODUCTS[pi]={...Object.assign({},PRODUCTS_EDIT[idx]));
   try{localStorage.setItem('aveDorada_products',JSON.stringify(PRODUCTS_EDIT));}catch(e){}
   renderGrid(filterProds()); renderAdminList(($('admin-search')||{value:''}).value||'');
   closeEditor(); showToast('✅ Guardado');
 }
 function addNewProduct() {
-  var maxId=Math.max(...PRODUCTS_EDIT.map(p=>p.id),0);
+  var maxId=Math.max.apply(null,PRODUCTS_EDIT.map(function(p){return p.id;}).concat([0]));
   var np={id:maxId+1,name:'Nuevo Producto',cat:adminCat!=='todos'?adminCat:'aves',tag:null,tipo:'ambos',img:'',skus:[{l:'×Kg',p:0}]};
-  PRODUCTS_EDIT.push(np);PRODUCTS.push({...np});S.skuIdx[np.id]=0;
+  PRODUCTS_EDIT.push(np);PRODUCTS.push(Object.assign({},np));S.skuIdx[np.id]=0;
   try{localStorage.setItem('aveDorada_products',JSON.stringify(PRODUCTS_EDIT));}catch(e){}
   renderAdminList('');renderGrid(filterProds());openEditor(np.id);
   showToast('Producto creado');
@@ -2436,7 +2436,7 @@ function applyConfig() {
 function updateTicker(str) {
   var items=str.split('|').map(s=>s.trim()).filter(Boolean);
   var inner=$('ticker-inner');if(!inner)return;
-  inner.innerHTML=[...items,...items].map(t=>`<span class="ticker-item">${escHtml(t)}</span>`).join('<span class="ticker-sep">✦</span>');
+  inner.innerHTML=items.concat(items).map(function(t){return'<span class="ticker-item">'+escHtml(t)+'</span>';}).join('<span class="ticker-sep">✦</span>');
 }
 
 // ── EXPORT ─────────────────────────────────────────────────────
@@ -3046,7 +3046,7 @@ function subnav_click(el) {
   el.classList.add('active');
   S.cat = el.dataset.cat; S.q = ''; S.sort = 'default';
   syncCatCards(); renderGrid(filterProds());
-  window.scrollTo({top:200,behavior:'smooth'});
+  window.scrollTo(0,200);
 }
 
 function loadCustomCats() {
@@ -3127,7 +3127,7 @@ function importPricesCSV(event) {
       }
       try { localStorage.setItem('aveDorada_products', JSON.stringify(src)); } catch(ex) {}
       renderGrid(filterProds());
-      if(document.getElementById('admin-prod-list')) renderAdminList(document.getElementById('admin-search')?.value||'');
+      if(document.getElementById('admin-prod-list')) renderAdminList((document.getElementById('admin-search')||{value:''}).value||'');
       showToast('✅ '+updated+' actualizados'+( errors?' · '+errors+' errores':'')+(skipped?' · '+skipped+' saltados':''));
       event.target.value = '';
     } catch(err) { showToast('❌ Error: '+err.message); console.error(err); }
